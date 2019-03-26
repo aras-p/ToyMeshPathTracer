@@ -58,3 +58,10 @@ If you don't like git or version control, that's fine; I can accept submissions 
 As long as I can see the code and try it out.
 
 Your optimized program should produce same looking images as the original one, just *do it faster*.
+
+For reference, here are the performance numbers I get on my laptop (2019 MacBookPro i9 2.9GHz), rendering at 640x360, 4 samples per pixel, on this un-optimized implementation:
+
+* cube.obj (14 triangles): 3818.3 KRay/s (0.6 sec)
+* suzanne.obj (970 triangles): 48.3 KRays/s (53.0 sec)
+* teapot.obj (15706 triangles): 3.5 KRays/s (683.0 sec)
+* sponza.obj (66452 triangles): LOL nope, ain't nobody got time for that
