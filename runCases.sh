@@ -1,0 +1,5 @@
+(build/TrimeshTracer/Build/Products/Release/TrimeshTracer 640 360 4 data/triangle.obj) && (mv output.png output1Triangle.png)
+(build/TrimeshTracer/Build/Products/Release/TrimeshTracer 640 360 4 data/cube.obj) && (mv output.png output2Cube.png)
+(build/TrimeshTracer/Build/Products/Release/TrimeshTracer 640 360 4 data/suzanne.obj) && (mv output.png output3Suzanne.png)
+#(build/TrimeshTracer/Build/Products/Release/TrimeshTracer 640 360 4 data/teapot.obj) && (mv output.png output4Teapot.png)
+#(build/TrimeshTracer/Build/Products/Release/TrimeshTracer 640 360 4 data/sponza.obj) && (mv output.png output5Sponza.png)

@@ -1,0 +1,9 @@
+build/*
+output*.png
+.vs
+.idea
+*.exe
+*.pdb
+project.xcworkspace
+xcschememanagement.plist
+xcuserdata
