@@ -64,11 +64,11 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "320"
+            argument = "640"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "240"
+            argument = "360"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -77,11 +77,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "data/teapot.obj"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "data/cube.obj"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>
