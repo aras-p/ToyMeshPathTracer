@@ -68,7 +68,7 @@ inline float saturate(float v) { if (v < 0) return 0; if (v > 1) return 1; retur
 
 inline void AssertUnit(float3 v)
 {
-	(void)v;
+    (void)v;
     assert(fabsf(sqLength(v) - 1.0f) < 0.01f);
 }
 
