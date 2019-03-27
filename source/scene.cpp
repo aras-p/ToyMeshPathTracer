@@ -21,18 +21,18 @@ static bool HitAABB(const Ray& r, const AABB& box, float tMin, float tMax)
 {
 #define DO_COORD(c) \
     { \
-        float t0 = (box.bmin.c - r.orig.c) * r.dir.c; \
-        float t1 = (box.bmax.c - r.orig.c) * r.dir.c; \
-        if (r.dir.c < 0.0f) \
+        float t0 = (box.bmin.c() - r.orig.c()) * r.dir.c(); \
+        float t1 = (box.bmax.c() - r.orig.c()) * r.dir.c(); \
+        if (r.dir.c() < 0.0f) \
             std::swap(t0, t1); \
         tMin = t0 > tMin ? t0 : tMin; \
         tMax = t1 < tMax ? t1 : tMax; \
         if (tMax < tMin) \
             return false; \
     }
-    DO_COORD(x);
-    DO_COORD(y);
-    DO_COORD(z);
+    DO_COORD(getX);
+    DO_COORD(getY);
+    DO_COORD(getZ);
     return true;
 }
 
@@ -142,7 +142,7 @@ static int CreateBVH(int* triIndices, int triCount, uint32_t& rngState)
                       assert(b >= 0 && b < s_TriangleCount);
                       AABB boxa = AABBOfTriangle(s_Triangles[a]);
                       AABB boxb = AABBOfTriangle(s_Triangles[b]);
-                      return boxa.bmin.x < boxb.bmin.x;
+                      return boxa.bmin.getX() < boxb.bmin.getX();
                   });
     else if (axis == 1)
         std::sort(triIndices, triIndices + triCount, [](int a, int b)
@@ -151,7 +151,7 @@ static int CreateBVH(int* triIndices, int triCount, uint32_t& rngState)
                       assert(b >= 0 && b < s_TriangleCount);
                       AABB boxa = AABBOfTriangle(s_Triangles[a]);
                       AABB boxb = AABBOfTriangle(s_Triangles[b]);
-                      return boxa.bmin.y < boxb.bmin.y;
+                      return boxa.bmin.getY() < boxb.bmin.getY();
                   });
     else if (axis == 2)
         std::sort(triIndices, triIndices + triCount, [](int a, int b)
@@ -160,7 +160,7 @@ static int CreateBVH(int* triIndices, int triCount, uint32_t& rngState)
                       assert(b >= 0 && b < s_TriangleCount);
                       AABB boxa = AABBOfTriangle(s_Triangles[a]);
                       AABB boxb = AABBOfTriangle(s_Triangles[b]);
-                      return boxa.bmin.z < boxb.bmin.z;
+                      return boxa.bmin.getZ() < boxb.bmin.getZ();
                   });
 
     // create the node
@@ -263,9 +263,9 @@ int HitScene(const Ray& r, float tMin, float tMax, Hit& outHit)
         return -1;
     
     Ray invR = r;
-    invR.dir.x = 1.0f / r.dir.x;
-    invR.dir.y = 1.0f / r.dir.y;
-    invR.dir.z = 1.0f / r.dir.z;
+    invR.dir.setX(1.0f / r.dir.getX());
+    invR.dir.setY(1.0f / r.dir.getY());
+    invR.dir.setZ(1.0f / r.dir.getZ());
     return HitBVH(0, false, r, invR, tMin, tMax, outHit);
     
 #else

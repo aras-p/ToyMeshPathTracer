@@ -137,12 +137,12 @@ static bool LoadScene(const char* dataFile, float3& outBoundsMin, float3& outBou
     // itself, to serve as a "floor"
     float3 size = outBoundsMax - outBoundsMin;
     float3 extra = size * 0.7f;
-    tris[objTriCount+0].v0 = float3(outBoundsMin.x-extra.x, outBoundsMin.y, outBoundsMin.z-extra.z);
-    tris[objTriCount+0].v1 = float3(outBoundsMin.x-extra.x, outBoundsMin.y, outBoundsMax.z+extra.z);
-    tris[objTriCount+0].v2 = float3(outBoundsMax.x+extra.x, outBoundsMin.y, outBoundsMin.z-extra.z);
-    tris[objTriCount+1].v0 = float3(outBoundsMin.x-extra.x, outBoundsMin.y, outBoundsMax.z+extra.z);
-    tris[objTriCount+1].v1 = float3(outBoundsMax.x+extra.x, outBoundsMin.y, outBoundsMax.z+extra.z);
-    tris[objTriCount+1].v2 = float3(outBoundsMax.x+extra.x, outBoundsMin.y, outBoundsMin.z-extra.z);
+    tris[objTriCount+0].v0 = float3(outBoundsMin.getX()-extra.getX(), outBoundsMin.getY(), outBoundsMin.getZ()-extra.getZ());
+    tris[objTriCount+0].v1 = float3(outBoundsMin.getX()-extra.getX(), outBoundsMin.getY(), outBoundsMax.getZ()+extra.getZ());
+    tris[objTriCount+0].v2 = float3(outBoundsMax.getX()+extra.getX(), outBoundsMin.getY(), outBoundsMin.getZ()-extra.getZ());
+    tris[objTriCount+1].v0 = float3(outBoundsMin.getX()-extra.getX(), outBoundsMin.getY(), outBoundsMax.getZ()+extra.getZ());
+    tris[objTriCount+1].v1 = float3(outBoundsMax.getX()+extra.getX(), outBoundsMin.getY(), outBoundsMax.getZ()+extra.getZ());
+    tris[objTriCount+1].v2 = float3(outBoundsMax.getX()+extra.getX(), outBoundsMin.getY(), outBoundsMin.getZ()-extra.getZ());
 
     uint64_t t0 = stm_now();
     InitializeScene(objTriCount + 2, tris);
@@ -190,14 +190,14 @@ static void TraceImageJob(uint32_t start, uint32_t end, uint32_t threadnum, void
             col *= 1.0f / float(data.samplesPerPixel);
 
             // simplistic "gamma correction" by just taking a square root of the final color
-            col.x = sqrtf(col.x);
-            col.y = sqrtf(col.y);
-            col.z = sqrtf(col.z);
+            col.setX(sqrtf(col.getX()));
+            col.setY(sqrtf(col.getY()));
+            col.setZ(sqrtf(col.getZ()));
 
             // our image is bytes in 0-255 range, turn our floats into them here and write into the image
-            image[0] = uint8_t(saturate(col.x) * 255.0f);
-            image[1] = uint8_t(saturate(col.y) * 255.0f);
-            image[2] = uint8_t(saturate(col.z) * 255.0f);
+            image[0] = uint8_t(saturate(col.getX()) * 255.0f);
+            image[1] = uint8_t(saturate(col.getY()) * 255.0f);
+            image[2] = uint8_t(saturate(col.getZ()) * 255.0f);
             image[3] = 255;
             image += 4;
         }
