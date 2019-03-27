@@ -7,10 +7,19 @@
     <ClCompile Include="..\..\source\external\objparser.cpp">
       <Filter>external</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\external\enkits\TaskScheduler.cpp">
+      <Filter>external\enkiTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\external\enkits\TaskScheduler_c.cpp">
+      <Filter>external\enkiTS</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="external">
       <UniqueIdentifier>{d9924442-c84f-46f0-ba57-70ac8a1e6fc9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\enkiTS">
+      <UniqueIdentifier>{d7a73072-b709-4163-8dcc-3f20912ce4f0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -24,6 +33,21 @@
     </ClInclude>
     <ClInclude Include="..\..\source\external\stb_image_write.h">
       <Filter>external</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\external\enkits\Atomics.h">
+      <Filter>external\enkiTS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\external\enkits\LockLessMultiReadPipe.h">
+      <Filter>external\enkiTS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\external\enkits\TaskScheduler.h">
+      <Filter>external\enkiTS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\external\enkits\TaskScheduler_c.h">
+      <Filter>external\enkiTS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\external\enkits\Threads.h">
+      <Filter>external\enkiTS</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -11,12 +11,19 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\source\external\enkits\TaskScheduler.cpp" />
+    <ClCompile Include="..\..\source\external\enkits\TaskScheduler_c.cpp" />
     <ClCompile Include="..\..\source\external\objparser.cpp" />
     <ClCompile Include="..\..\source\main.cpp" />
     <ClCompile Include="..\..\source\maths.cpp" />
     <ClCompile Include="..\..\source\scene.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\source\external\enkits\Atomics.h" />
+    <ClInclude Include="..\..\source\external\enkits\LockLessMultiReadPipe.h" />
+    <ClInclude Include="..\..\source\external\enkits\TaskScheduler.h" />
+    <ClInclude Include="..\..\source\external\enkits\TaskScheduler_c.h" />
+    <ClInclude Include="..\..\source\external\enkits\Threads.h" />
     <ClInclude Include="..\..\source\external\objparser.h" />
     <ClInclude Include="..\..\source\external\sokol_time.h" />
     <ClInclude Include="..\..\source\external\stb_image_write.h" />
