@@ -28,6 +28,15 @@ here is "certainly overkill" and not needed; achieving a 10x faster performance 
 
 Go!
 
+#### What I will be looking at
+
+* Overall I would recommend making a clone of this project on github and using "actual version control" workflow to make your changes.
+If you don't like git or version control, that's fine; I can accept submissions in zip or dropbox or google drive (or whatever) form.
+As long as I can see the code and try it out.
+* Your optimized program should produce same looking images as the original one, just *do it faster*.
+* I'll be looking at "everything" that is important in programming job: whether the code works correctly, is understandable, how is it structured, how it behaves performance wise (computing usage, memory usage etc.).
+
+
 
 ## About the code
 
@@ -51,13 +60,7 @@ or path-tracers should be required.
 
 If you *do* want to read up on what this "path tracing" thing is *(and maybe even get some ideas how to make it faster? who knows)*,
 I can recommend "Ray Tracing in a Weekend", "Ray Tracing: The Next Week" and "Ray Tracing: the Rest of Your Life" minibook series,
-which have been recently [made free here](http://www.realtimerendering.com/raytracing/).
-
-Overall I would recommend making a clone of this project on github and using "actual version control" workflow to make your changes.
-If you don't like git or version control, that's fine; I can accept submissions in zip or dropbox or google drive (or whatever) form.
-As long as I can see the code and try it out.
-
-Your optimized program should produce same looking images as the original one, just *do it faster*.
+which have been recently [made free here](http://www.realtimerendering.com/raytracing/). The internet is full of other information about ray/path tracing as well.
 
 For reference, here are the performance numbers I get on my laptop (2019 MacBookPro i9 2.9GHz), rendering at 640x360, 4 samples per pixel, on this un-optimized implementation:
 
