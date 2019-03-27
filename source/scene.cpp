@@ -16,14 +16,14 @@ struct AABB
 };
 
 // from Peter Shirley's "Ray Tracing: The Next Week"
+// note: ray direction should be inverted, i.e 1.0/direction!
 static bool HitAABB(const Ray& r, const AABB& box, float tMin, float tMax)
 {
 #define DO_COORD(c) \
     { \
-        float invD = 1.0f / r.dir.c; \
-        float t0 = (box.bmin.c - r.orig.c) * invD; \
-        float t1 = (box.bmax.c - r.orig.c) * invD; \
-        if (invD < 0.0f) \
+        float t0 = (box.bmin.c - r.orig.c) * r.dir.c; \
+        float t1 = (box.bmax.c - r.orig.c) * r.dir.c; \
+        if (r.dir.c < 0.0f) \
             std::swap(t0, t1); \
         tMin = t0 > tMin ? t0 : tMin; \
         tMax = t1 < tMax ? t1 : tMax; \
@@ -223,7 +223,7 @@ void CleanupScene()
     s_BVH.clear();
 }
 
-static int HitBVH(int index, bool leaf, const Ray& r, float tMin, float tMax, Hit& outHit)
+static int HitBVH(int index, bool leaf, const Ray& r, const Ray& invR, float tMin, float tMax, Hit& outHit)
 {
     // if leaf node, check against a triangle
     if (leaf)
@@ -236,12 +236,12 @@ static int HitBVH(int index, bool leaf, const Ray& r, float tMin, float tMax, Hi
     
     // not a leaf node; check if ray hits us at all
     const BVHNode& node = s_BVH[index];
-    if (!HitAABB(r, node.box, tMin, tMax))
+    if (!HitAABB(invR, node.box, tMin, tMax))
         return -1;
     
     Hit leftHit, rightHit;
-    int leftId = HitBVH(node.left, node.leftLeaf, r, tMin, tMax, leftHit);
-    int rightId = HitBVH(node.right, node.rightLeaf, r, tMin, tMax, rightHit);
+    int leftId = HitBVH(node.left, node.leftLeaf, r, invR, tMin, tMax, leftHit);
+    int rightId = HitBVH(node.right, node.rightLeaf, r, invR, tMin, tMax, rightHit);
     if (leftId != -1 && rightId != -1)
     {
         // both are hit, return closest one
@@ -280,7 +280,11 @@ int HitScene(const Ray& r, float tMin, float tMax, Hit& outHit)
     if (s_BVH.empty())
         return -1;
     
-    return HitBVH(0, false, r, tMin, tMax, outHit);
+    Ray invR = r;
+    invR.dir.x = 1.0f / r.dir.x;
+    invR.dir.y = 1.0f / r.dir.y;
+    invR.dir.z = 1.0f / r.dir.z;
+    return HitBVH(0, false, r, invR, tMin, tMax, outHit);
     
 #else
 
