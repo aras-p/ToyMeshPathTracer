@@ -45,7 +45,7 @@ As long as I can see the code and try it out.
 ## About the code
 
 I made it work on Windows (Visual Studio 2017) and Mac (Xcode 10); the project files for them are respectively in
-`projects/VisualStudio/TrimeshTracer.sln` and `projects/Xcode/TrimeshTracer.xcodeproj`. If you have any trouble building or running it,
+`projects/VisualStudio/TrimeshTracer.sln` and `projects/Xcode/TrimeshTracer.xcodeproj`. In Visual Studio project, you might need to update settings to whatever Windows SDK version you have, I picked the oldest I had on my machine. If you have any trouble building or running it,
 ask me!
 
 The application accepts four command line arguments as input: `<width> <height> <spp> <datafile>`:
