@@ -239,36 +239,18 @@ static int HitBVH(int index, bool leaf, const Ray& r, const Ray& invR, float tMi
     if (!HitAABB(invR, node.box, tMin, tMax))
         return -1;
     
-    Hit leftHit, rightHit;
-    int leftId = HitBVH(node.left, node.leftLeaf, r, invR, tMin, tMax, leftHit);
-    int rightId = HitBVH(node.right, node.rightLeaf, r, invR, tMin, tMax, rightHit);
-    if (leftId != -1 && rightId != -1)
-    {
-        // both are hit, return closest one
-        if (leftHit.t < rightHit.t)
-        {
-            outHit = leftHit;
-            return leftId;
-        }
-        else
-        {
-            outHit = rightHit;
-            return rightId;
-        }
-    }
+    int leftId = HitBVH(node.left, node.leftLeaf, r, invR, tMin, tMax, outHit);
     if (leftId != -1)
     {
-        // only left was hit
-        outHit = leftHit;
+        // left was hit: only check right hit up until left hit distance
+        int rightId = HitBVH(node.right, node.rightLeaf, r, invR, tMin, outHit.t, outHit);
+        if (rightId != -1)
+            return rightId;
         return leftId;
     }
-    if (rightId != -1)
-    {
-        // only right was hit
-        outHit = rightHit;
-        return rightId;
-    }
-    return -1;
+    // left was not hit: check right
+    int rightId = HitBVH(node.right, node.rightLeaf, r, invR, tMin, tMax, outHit);
+    return rightId;
 }
 
 
