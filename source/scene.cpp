@@ -259,9 +259,7 @@ int HitScene(const Ray& r, float tMin, float tMax, Hit& outHit)
         return -1;
     
     Ray invR = r;
-    invR.dir.setX(1.0f / r.dir.getX());
-    invR.dir.setY(1.0f / r.dir.getY());
-    invR.dir.setZ(1.0f / r.dir.getZ());
+    invR.dir = float3(1.0f) / r.dir;
     return HitBVH(0, false, r, invR, tMin, tMax, outHit);
     
 #else
