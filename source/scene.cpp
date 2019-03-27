@@ -26,8 +26,8 @@ static bool HitAABB(const Ray& r, const AABB& box, float tMin, float tMax)
     float3 tsmaller = min(t0, t1);
     float3 tbigger  = max(t0, t1);
     
-    tMin = fmax(tMin, hmax(tsmaller));
-    tMax = fmin(tMax, hmin(tbigger));
+    tMin = std::max(tMin, hmax(tsmaller));
+    tMax = std::min(tMax, hmin(tbigger));
     
     return tMin <= tMax;
 }
