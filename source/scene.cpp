@@ -15,25 +15,21 @@ struct AABB
     float3 bmax;
 };
 
-// from Peter Shirley's "Ray Tracing: The Next Week"
+// from "A Ray-Box Intersection Algorithm and Efficient Dynamic Voxel Rendering"
+// http://jcgt.org/published/0007/03/04/
 // note: ray direction should be inverted, i.e 1.0/direction!
 static bool HitAABB(const Ray& r, const AABB& box, float tMin, float tMax)
 {
-#define DO_COORD(c) \
-    { \
-        float t0 = (box.bmin.c() - r.orig.c()) * r.dir.c(); \
-        float t1 = (box.bmax.c() - r.orig.c()) * r.dir.c(); \
-        if (r.dir.c() < 0.0f) \
-            std::swap(t0, t1); \
-        tMin = t0 > tMin ? t0 : tMin; \
-        tMax = t1 < tMax ? t1 : tMax; \
-        if (tMax < tMin) \
-            return false; \
-    }
-    DO_COORD(getX);
-    DO_COORD(getY);
-    DO_COORD(getZ);
-    return true;
+    float3 t0 = (box.bmin - r.orig) * r.dir;
+    float3 t1 = (box.bmax - r.orig) * r.dir;
+    
+    float3 tsmaller = min(t0, t1);
+    float3 tbigger  = max(t0, t1);
+    
+    tMin = fmax(tMin, hmax(tsmaller));
+    tMax = fmin(tMax, hmin(tbigger));
+    
+    return tMin <= tMax;
 }
 
 static AABB AABBUnion(const AABB& a, const AABB& b)
