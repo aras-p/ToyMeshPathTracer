@@ -28,3 +28,6 @@ void CleanupScene();
 //
 // Function returns the triangle index, or -1 if nothing is hit by the ray.
 int HitScene(const Ray& r, float tMin, float tMax, Hit& outHit);
+
+// Similar to HitScene, but only returns if the ray hit anything
+bool HitSceneShadow(const Ray& r, float tMin, float tMax);

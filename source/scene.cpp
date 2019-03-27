@@ -97,6 +97,37 @@ static bool HitTriangle(const Ray& r, const Triangle& tri, float tMin, float tMa
     return false;
 }
 
+static bool HitTriangleShadow(const Ray& r, const Triangle& tri, float tMin, float tMax)
+{
+    float3 e1 = tri.v1 - tri.v0;
+    float3 e2 = tri.v2 - tri.v0;
+    float3 p = cross(r.dir, e2);
+    float a = dot(e1, p);
+    if (fabs(a) < 1e-5f)
+        return false; // parallel to the plane
+    
+    float f = 1.0f / a;
+    float3 s = r.orig - tri.v0;
+    float u = f * dot(s, p);
+    
+    if (u < 0.0f || u > 1.0f)
+        return false; // but outside the triangle
+    
+    float3 q = cross(s, e1);
+    float v = f * dot(r.dir, q);
+    
+    if (v < 0.0f || (u + v) > 1.0f)
+        return false; // but outside the triangle
+    
+    float t = f * dot(e2, q);
+    
+    if (t > tMin && t < tMax)
+        return true;
+    return false;
+}
+
+
+
 // --------------------------------------------------------------------------
 //  bounding volume hierarchy
 
@@ -246,6 +277,27 @@ static int HitBVH(int index, bool leaf, const Ray& r, const Ray& invR, float tMi
     return rightId;
 }
 
+static bool HitShadowBVH(int index, bool leaf, const Ray& r, const Ray& invR, float tMin, float tMax)
+{
+    // if leaf node, check against a triangle
+    if (leaf)
+    {
+        assert(index >= 0 && index < s_TriangleCount);
+        return HitTriangleShadow(r, s_Triangles[index], tMin, tMax);
+    }
+    
+    // not a leaf node; check if ray hits us at all
+    const BVHNode& node = s_BVH[index];
+    if (!HitAABB(invR, node.box, tMin, tMax))
+        return false;
+    
+    if (HitShadowBVH(node.left, node.leftLeaf, r, invR, tMin, tMax))
+        return true;
+    if (HitShadowBVH(node.right, node.rightLeaf, r, invR, tMin, tMax))
+        return true;
+    return false;
+}
+
 
 // Check all the triangles in the scene for a hit, and return the closest one.
 int HitScene(const Ray& r, float tMin, float tMax, Hit& outHit)
@@ -278,5 +330,17 @@ int HitScene(const Ray& r, float tMin, float tMax, Hit& outHit)
     }
 
     return hitID;
+#endif
+}
+
+bool HitSceneShadow(const Ray& r, float tMin, float tMax)
+{
+#if USE_BVH
+    if (s_BVH.empty())
+        return false;
+
+    Ray invR = r;
+    invR.dir = float3(1.0f) / r.dir;
+    return HitShadowBVH(0, false, r, invR, tMin, tMax);
 #endif
 }

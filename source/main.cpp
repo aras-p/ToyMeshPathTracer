@@ -54,9 +54,7 @@ static bool Scatter(const Ray& r, const Hit& hit, float3& attenuation, Ray& scat
     
     // explicit directional light by shooting a shadow ray
     ++inoutRayCount;
-    Hit lightHit;
-    int id = HitScene(Ray(hit.pos, kLightDir), kMinT, kMaxT, lightHit);
-    if (id == -1)
+    if (!HitSceneShadow(Ray(hit.pos, kLightDir), kMinT, kMaxT))
     {
         // ray towards the light did not hit anything in the scene, so
         // that means we are not in shadow: compute illumination from it
