@@ -2,7 +2,7 @@
 
 #include "maths.h"
 #include "scene.h"
-
+#include <atomic>
 
 // Include external libraries:
 // - PNG writing
@@ -14,6 +14,8 @@
 #include "external/sokol_time.h"
 // - OBJ file loading
 #include "external/objparser.h"
+// - Multi-threaded job system
+#include "external/enkits/TaskScheduler_c.h"
 
 
 // --------------------------------------------------------------------------
@@ -155,18 +157,21 @@ struct TraceData
     int screenWidth, screenHeight, samplesPerPixel;
     uint8_t* image;
     const Camera* camera;
-    int rayCount;
+    std::atomic<int> rayCount;
 };
 
-static void TraceImage(TraceData& data)
+static void TraceImageJob(uint32_t start, uint32_t end, uint32_t threadnum, void* data_)
 {
-    uint8_t* image = data.image;
+    (void)threadnum;
+    TraceData& data = *(TraceData*)data_;
+    uint8_t* image = data.image + start * data.screenWidth * 4;
+
     float invWidth = 1.0f / data.screenWidth;
     float invHeight = 1.0f / data.screenHeight;
 
     int rayCount = 0;
     // go over the image: each pixel row
-    for (uint32_t y = 0; y < data.screenHeight; ++y)
+    for (uint32_t y = start; y < end; ++y)
     {
         // go over the image: each pixel in the row
         uint32_t rngState = y * 9781 + 1;
@@ -250,8 +255,13 @@ int main(int argc, const char** argv)
 
     // create RGBA image for the result
     uint8_t* image = new uint8_t[screenWidth * screenHeight * 4];
+    
+    // initialize job system for threading
+    enkiTaskScheduler* jobSystem = enkiNewTaskScheduler();
+    enkiInitTaskScheduler(jobSystem);
+    enkiTaskSet* job = enkiCreateTaskSet(jobSystem, TraceImageJob);
 
-    // generate the image - run TraceImage
+    // generate the image - spawn TraceImageJob jobs to cover the whole image, and wait for all of them to complete
     uint64_t t0 = stm_now();
 
     TraceData data;
@@ -261,7 +271,11 @@ int main(int argc, const char** argv)
     data.image = image;
     data.camera = &camera;
     data.rayCount = 0;
-    TraceImage(data);
+    // for debugging: set to false to effectively turn off threading (will create one job invocation
+    // only, that covers the whole screen)
+    bool threaded = true;
+    enkiAddTaskSetToPipeMinRange(jobSystem, job, &data, screenHeight, threaded ? 1 : screenHeight);
+    enkiWaitForTaskSet(jobSystem, job);
 
     double dt = stm_sec(stm_since(t0));
     printf("Rendered scene at %ix%i,%ispp in %.3f s\n", screenWidth, screenHeight, samplesPerPixel, dt);
@@ -273,6 +287,8 @@ int main(int argc, const char** argv)
 
     // cleanup and exit
     delete[] image;
+    enkiDeleteTaskSet(job);
+    enkiDeleteTaskScheduler(jobSystem);
     CleanupScene();
     return 0;
 }
