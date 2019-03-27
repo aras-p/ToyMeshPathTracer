@@ -12,15 +12,16 @@ Here are some images that the program can produce with the data files present un
 ## The Task
 
 Current program is slow. *Really slow*. Rendering that monkey head model ("Suzanne") at a lowly 640x360 resolution,
-4 samples per pixel, takes **one minute** on my PC! Rendering the other image ("Sponza") at the same resolution takes **half an hour**.
+4 samples per pixel, takes **one minute** on my PC! Rendering the other image ("Sponza") at the same resolution takes **five hours**.
 
 Your task then is, of course, to make the program faster :)
 
-I know for sure that it is possible to make it faster by about a *hundred times* -- e.g. I got Suzanne from a minute down to 0.2 seconds,
-and Sponza from half an hour down to about 8 seconds. It might be possible to make it even faster, but I did not quite go there.
+I know for sure that it is possible to make it faster by *more than a hundred times* -- e.g. I got Suzanne from a minute down
+to 0.2 seconds, and Sponza from five hours down to 8 seconds. It might be possible to make it even faster, but I
+did not quite go there.
 
-Now, **your task is to make it run as fast as you can**. I'm not asking for a "hundred times", but something like "**at least ten times faster**"
-is what you should aim for.
+Now, **your task is to make it run as fast as you can**. I'm not asking for a "hundred times", but something like
+"**at least ten times faster**" is what you should aim for.
 
 It's entirely your choice how you will do it. Better algorithms? More efficient math? Better data layout? Multi-threading? SIMD?
 Rewrite in assembly? Rewrite as a compute shader / CUDA / OpenCL? Rewrite for NVIDIA RTX? All of these? You pick :) Some of what I listed
