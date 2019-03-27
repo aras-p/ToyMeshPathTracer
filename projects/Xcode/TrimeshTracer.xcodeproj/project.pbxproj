@@ -11,6 +11,8 @@
 		2BBF7DCB22492D4500FCABB2 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2BBF7DC822492D4500FCABB2 /* main.cpp */; };
 		2BBF7DCC22492D4500FCABB2 /* maths.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2BBF7DC922492D4500FCABB2 /* maths.cpp */; };
 		2BBF7DE5224A6E8D00FCABB2 /* objparser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2BBF7DE2224A6E8D00FCABB2 /* objparser.cpp */; };
+		2BBF7DEF224BB32000FCABB2 /* TaskScheduler_c.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2BBF7DE8224BB32000FCABB2 /* TaskScheduler_c.cpp */; };
+		2BBF7DF0224BB32000FCABB2 /* TaskScheduler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2BBF7DEE224BB32000FCABB2 /* TaskScheduler.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -36,6 +38,13 @@
 		2BBF7DE2224A6E8D00FCABB2 /* objparser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = objparser.cpp; sourceTree = "<group>"; };
 		2BBF7DE3224A6E8D00FCABB2 /* sokol_time.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sokol_time.h; sourceTree = "<group>"; };
 		2BBF7DE4224A6E8D00FCABB2 /* stb_image_write.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = stb_image_write.h; sourceTree = "<group>"; };
+		2BBF7DE8224BB32000FCABB2 /* TaskScheduler_c.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TaskScheduler_c.cpp; sourceTree = "<group>"; };
+		2BBF7DE9224BB32000FCABB2 /* LockLessMultiReadPipe.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LockLessMultiReadPipe.h; sourceTree = "<group>"; };
+		2BBF7DEA224BB32000FCABB2 /* TaskScheduler_c.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TaskScheduler_c.h; sourceTree = "<group>"; };
+		2BBF7DEB224BB32000FCABB2 /* TaskScheduler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TaskScheduler.h; sourceTree = "<group>"; };
+		2BBF7DEC224BB32000FCABB2 /* Threads.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Threads.h; sourceTree = "<group>"; };
+		2BBF7DED224BB32000FCABB2 /* Atomics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atomics.h; sourceTree = "<group>"; };
+		2BBF7DEE224BB32000FCABB2 /* TaskScheduler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TaskScheduler.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,12 +91,27 @@
 		2BBF7DCD22492D5700FCABB2 /* external */ = {
 			isa = PBXGroup;
 			children = (
+				2BBF7DE7224BB32000FCABB2 /* enkits */,
 				2BBF7DE2224A6E8D00FCABB2 /* objparser.cpp */,
 				2BBF7DE1224A6E8D00FCABB2 /* objparser.h */,
 				2BBF7DE3224A6E8D00FCABB2 /* sokol_time.h */,
 				2BBF7DE4224A6E8D00FCABB2 /* stb_image_write.h */,
 			);
 			path = external;
+			sourceTree = "<group>";
+		};
+		2BBF7DE7224BB32000FCABB2 /* enkits */ = {
+			isa = PBXGroup;
+			children = (
+				2BBF7DE8224BB32000FCABB2 /* TaskScheduler_c.cpp */,
+				2BBF7DE9224BB32000FCABB2 /* LockLessMultiReadPipe.h */,
+				2BBF7DEA224BB32000FCABB2 /* TaskScheduler_c.h */,
+				2BBF7DEB224BB32000FCABB2 /* TaskScheduler.h */,
+				2BBF7DEC224BB32000FCABB2 /* Threads.h */,
+				2BBF7DED224BB32000FCABB2 /* Atomics.h */,
+				2BBF7DEE224BB32000FCABB2 /* TaskScheduler.cpp */,
+			);
+			path = enkits;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -147,6 +171,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				2BBF7DE5224A6E8D00FCABB2 /* objparser.cpp in Sources */,
+				2BBF7DEF224BB32000FCABB2 /* TaskScheduler_c.cpp in Sources */,
+				2BBF7DF0224BB32000FCABB2 /* TaskScheduler.cpp in Sources */,
 				2BBF7DCC22492D4500FCABB2 /* maths.cpp in Sources */,
 				2BBF7DCB22492D4500FCABB2 /* main.cpp in Sources */,
 				2BBF7DCA22492D4500FCABB2 /* scene.cpp in Sources */,
