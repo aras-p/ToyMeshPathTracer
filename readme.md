@@ -34,7 +34,10 @@ Go!
 If you don't like git or version control, that's fine; I can accept submissions in zip or dropbox or google drive (or whatever) form.
 As long as I can see the code and try it out.
 * Your optimized program should produce same looking images as the original one, just *do it faster*.
-* I'll be looking at "everything" that is important in programming job: whether the code works correctly, is understandable, how is it structured, how it behaves performance wise (computing usage, memory usage etc.).
+* I'll be looking at "everything" that is important in programming job: whether the code works correctly, is understandable,
+  how is it structured, how it behaves performance wise (computing usage, memory usage etc.).
+* It is *very* likely that your first submission will not be quite good, so do not delay it until the last day! Usually it
+  takes 2-4 iterations to arrive at a good solution.
 
 
 
