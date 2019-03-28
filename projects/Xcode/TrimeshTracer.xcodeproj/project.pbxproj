@@ -45,6 +45,7 @@
 		2BBF7DEC224BB32000FCABB2 /* Threads.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Threads.h; sourceTree = "<group>"; };
 		2BBF7DED224BB32000FCABB2 /* Atomics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Atomics.h; sourceTree = "<group>"; };
 		2BBF7DEE224BB32000FCABB2 /* TaskScheduler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TaskScheduler.cpp; sourceTree = "<group>"; };
+		2BBF7DF3224CA0FE00FCABB2 /* nanort.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nanort.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,6 +92,7 @@
 		2BBF7DCD22492D5700FCABB2 /* external */ = {
 			isa = PBXGroup;
 			children = (
+				2BBF7DF3224CA0FE00FCABB2 /* nanort.h */,
 				2BBF7DE7224BB32000FCABB2 /* enkits */,
 				2BBF7DE2224A6E8D00FCABB2 /* objparser.cpp */,
 				2BBF7DE1224A6E8D00FCABB2 /* objparser.h */,

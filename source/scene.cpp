@@ -13,10 +13,21 @@
 #include "external/embree3/rtcore.h"
 #endif
 
+// Use NanoRT for BVH and all ray queries?
+#define USE_NANORT 0
+#if USE_NANORT
+#include "external/nanort.h"
+#endif
+
+
+#if USE_EMBREE || USE_NANORT
+#undef USE_BVH
+#endif
+
 // --------------------------------------------------------------------------
 // Axis-aligned bounding box and related functions
 
-#if USE_BVH && !USE_EMBREE
+#if USE_BVH
 struct AABB
 {
     float3 bmin;
@@ -65,14 +76,14 @@ static AABB AABBOfTriangle(const Triangle& tri)
     res = AABBEnclose(res, tri.v2);
     return res;
 }
-#endif // #if USE_BVH && !USE_EMBREE
+#endif // #if USE_BVH
 
 
 // --------------------------------------------------------------------------
 // Checks if one triangle is hit by a ray segment.
 // based on "The Graphics Codex"
 
-#if !USE_EMBREE
+#if !USE_EMBREE && !USE_NANORT
 static bool HitTriangle(const Ray& r, const Triangle& tri, float tMin, float tMax, Hit& outHit)
 {
     float3 e1 = tri.v1 - tri.v0;
@@ -135,13 +146,13 @@ static bool HitTriangleShadow(const Ray& r, const Triangle& tri, float tMin, flo
         return true;
     return false;
 }
-#endif // #if !USE_EMBREE
+#endif // #if !USE_EMBREE && !USE_NANORT
 
 
 // --------------------------------------------------------------------------
 //  bounding volume hierarchy
 
-#if USE_BVH && !USE_EMBREE
+#if USE_BVH
 struct BVHNode
 {
     AABB box;
@@ -150,12 +161,12 @@ struct BVHNode
     bool leftLeaf;
     bool rightLeaf;
 };
-#endif // #if USE_BVH && !USE_EMBREE
+#endif // #if USE_BVH
 
 // Scene information: a copy of the input triangles
 static int s_TriangleCount;
 static Triangle* s_Triangles;
-#if USE_BVH && !USE_EMBREE
+#if USE_BVH
 static std::vector<BVHNode> s_BVH;
 #endif
 
@@ -164,7 +175,13 @@ static RTCDevice s_Device;
 static RTCScene s_Scene;
 #endif
 
-#if USE_BVH && !USE_EMBREE
+#if USE_NANORT
+static unsigned int* s_Indices;
+static nanort::BVHAccel<float> s_BVH;
+static nanort::TriangleMesh<float>* s_Mesh;
+#endif
+
+#if USE_BVH
 static uint32_t XorShift32(uint32_t& state)
 {
     uint32_t x = state;
@@ -243,7 +260,7 @@ static int CreateBVH(int* triIndices, int triCount, uint32_t& rngState)
     s_BVH[nodeIndex] = node;
     return nodeIndex;
 }
-#endif // #if USE_BVH && !USE_EMBREE
+#endif // #if USE_BVH
 
 void InitializeScene(int triangleCount, const Triangle* triangles)
 {
@@ -272,9 +289,21 @@ void InitializeScene(int triangleCount, const Triangle* triangles)
     rtcReleaseGeometry(mesh);
     
     rtcCommitScene(s_Scene);
-#endif // #if USE_EMBREE
     
-#if USE_BVH && !USE_EMBREE
+#elif USE_NANORT
+
+    nanort::BVHBuildOptions<float> buildOptions;
+    buildOptions.cache_bbox = false;
+
+    s_Indices = new unsigned int[triangleCount*3];
+    for (int i = 0; i < triangleCount*3; ++i)
+        s_Indices[i] = i;
+    s_Mesh = new nanort::TriangleMesh<float>((const float*)s_Triangles, s_Indices, sizeof(float3));
+    nanort::TriangleSAHPred<float> pred((const float*)s_Triangles, s_Indices, sizeof(float3));
+    s_BVH.Build(triangleCount, *s_Mesh, pred, buildOptions);
+
+#elif USE_BVH
+    
     // build BVH
     int* triIndices = new int[triangleCount];
     for (int i = 0; i < triangleCount; ++i)
@@ -282,22 +311,24 @@ void InitializeScene(int triangleCount, const Triangle* triangles)
     uint32_t rngState = 1;
     CreateBVH(triIndices, triangleCount, rngState);
     delete[] triIndices;
-#endif // #if USE_BVH && !USE_EMBREE
+#endif
 }
 
 void CleanupScene()
 {
     delete[] s_Triangles;
-#if USE_BVH && !USE_EMBREE
-    s_BVH.clear();
-#endif
 #if USE_EMBREE
     rtcReleaseScene(s_Scene);
     rtcReleaseDevice(s_Device);
+#elif USE_NANORT
+    delete s_Mesh;
+    delete[] s_Indices;
+#elif USE_BVH
+    s_BVH.clear();
 #endif
 }
 
-#if USE_BVH && !USE_EMBREE
+#if USE_BVH
 static int HitBVH(int index, bool leaf, const Ray& r, const Ray& invR, float tMin, float tMax, Hit& outHit)
 {
     // if leaf node, check against a triangle
@@ -348,7 +379,7 @@ static bool HitShadowBVH(int index, bool leaf, const Ray& r, const Ray& invR, fl
         return true;
     return false;
 }
-#endif // #if USE_BVH && !USE_EMBREE
+#endif // #if USE_BVH
 
 
 // Check all the triangles in the scene for a hit, and return the closest one.
@@ -377,6 +408,29 @@ int HitScene(const Ray& r, float tMin, float tMax, Hit& outHit)
     outHit.pos = r.pointAt(outHit.t);
     outHit.normal = normalize(float3(rh.hit.Ng_x, rh.hit.Ng_y, rh.hit.Ng_z));
     return rh.hit.primID;
+    
+#elif USE_NANORT
+    nanort::Ray<float> ray;
+    ray.min_t = tMin;
+    ray.max_t = tMax;
+    r.orig.store(ray.org);
+    r.dir.store(ray.dir);
+    
+    nanort::TriangleIntersector<> intersector((const float*)s_Triangles, s_Indices, sizeof(float3));
+    nanort::TriangleIntersection<> isect;
+    bool hit = s_BVH.Traverse(ray, intersector, &isect);
+    if (!hit)
+        return -1;
+
+    outHit.t = isect.t;
+    outHit.pos = r.pointAt(isect.t);
+    const Triangle& tri = s_Triangles[isect.prim_id];
+    
+    float3 e1 = tri.v1 - tri.v0;
+    float3 e2 = tri.v2 - tri.v0;
+    float3 n = normalize(cross(e1,e2));
+    outHit.normal = n;
+    return isect.prim_id;
     
 #elif USE_BVH
     
@@ -428,6 +482,17 @@ bool HitSceneShadow(const Ray& r, float tMin, float tMax)
     rtcOccluded1(s_Scene, &ctx, &rh);
     return rh.tfar < 0;
     
+#elif USE_NANORT
+    nanort::Ray<float> ray;
+    ray.min_t = tMin;
+    ray.max_t = tMax;
+    r.orig.store(ray.org);
+    r.dir.store(ray.dir);
+    
+    nanort::TriangleIntersector<> intersector((const float*)s_Triangles, s_Indices, sizeof(float3));
+    nanort::TriangleIntersection<> isect;
+    return s_BVH.Traverse(ray, intersector, &isect);
+
 #elif USE_BVH
     if (s_BVH.empty())
         return false;
