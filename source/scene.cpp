@@ -4,11 +4,19 @@
 #include <vector>
 #include <utility>
 
+// Use our own simple BVH implementation to speed up ray queries?
 #define USE_BVH 1
+
+// Use Intel Embree for BVH and all ray queries?
+#define USE_EMBREE 0
+#if USE_EMBREE
+#include "external/embree3/rtcore.h"
+#endif
 
 // --------------------------------------------------------------------------
 // Axis-aligned bounding box and related functions
 
+#if USE_BVH && !USE_EMBREE
 struct AABB
 {
     float3 bmin;
@@ -57,12 +65,14 @@ static AABB AABBOfTriangle(const Triangle& tri)
     res = AABBEnclose(res, tri.v2);
     return res;
 }
+#endif // #if USE_BVH && !USE_EMBREE
 
 
 // --------------------------------------------------------------------------
 // Checks if one triangle is hit by a ray segment.
 // based on "The Graphics Codex"
 
+#if !USE_EMBREE
 static bool HitTriangle(const Ray& r, const Triangle& tri, float tMin, float tMax, Hit& outHit)
 {
     float3 e1 = tri.v1 - tri.v0;
@@ -125,12 +135,13 @@ static bool HitTriangleShadow(const Ray& r, const Triangle& tri, float tMin, flo
         return true;
     return false;
 }
-
+#endif // #if !USE_EMBREE
 
 
 // --------------------------------------------------------------------------
 //  bounding volume hierarchy
 
+#if USE_BVH && !USE_EMBREE
 struct BVHNode
 {
     AABB box;
@@ -139,12 +150,21 @@ struct BVHNode
     bool leftLeaf;
     bool rightLeaf;
 };
+#endif // #if USE_BVH && !USE_EMBREE
 
-// Scene information: a copy of the input triangles, and the BVH
+// Scene information: a copy of the input triangles
 static int s_TriangleCount;
 static Triangle* s_Triangles;
+#if USE_BVH && !USE_EMBREE
 static std::vector<BVHNode> s_BVH;
+#endif
 
+#if USE_EMBREE
+static RTCDevice s_Device;
+static RTCScene s_Scene;
+#endif
+
+#if USE_BVH && !USE_EMBREE
 static uint32_t XorShift32(uint32_t& state)
 {
     uint32_t x = state;
@@ -223,6 +243,7 @@ static int CreateBVH(int* triIndices, int triCount, uint32_t& rngState)
     s_BVH[nodeIndex] = node;
     return nodeIndex;
 }
+#endif // #if USE_BVH && !USE_EMBREE
 
 void InitializeScene(int triangleCount, const Triangle* triangles)
 {
@@ -230,23 +251,53 @@ void InitializeScene(int triangleCount, const Triangle* triangles)
     s_Triangles = new Triangle[triangleCount];
     memcpy(s_Triangles, triangles, triangleCount * sizeof(triangles[0]));
     
+#if USE_EMBREE
+    s_Device = rtcNewDevice("threads=1");
+    s_Scene = rtcNewScene(s_Device);
+    
+    RTCGeometry mesh = rtcNewGeometry (s_Device, RTC_GEOMETRY_TYPE_TRIANGLE);
+    float* dstVerts = (float*)rtcSetNewGeometryBuffer(mesh, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, 12, triangleCount*3);
+    int* indices = (int*)rtcSetNewGeometryBuffer(mesh, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT3, 12, triangleCount);
+    for (int i = 0; i < triangleCount; ++i)
+    {
+        memcpy(dstVerts+i*9+0, &triangles[i].v0, 12);
+        memcpy(dstVerts+i*9+3, &triangles[i].v1, 12);
+        memcpy(dstVerts+i*9+6, &triangles[i].v2, 12);
+        indices[i*3+0] = i*3+0;
+        indices[i*3+1] = i*3+1;
+        indices[i*3+2] = i*3+2;
+    }
+    rtcCommitGeometry(mesh);
+    rtcAttachGeometry(s_Scene, mesh);
+    rtcReleaseGeometry(mesh);
+    
+    rtcCommitScene(s_Scene);
+#endif // #if USE_EMBREE
+    
+#if USE_BVH && !USE_EMBREE
     // build BVH
-#if USE_BVH
     int* triIndices = new int[triangleCount];
     for (int i = 0; i < triangleCount; ++i)
         triIndices[i] = i;
     uint32_t rngState = 1;
     CreateBVH(triIndices, triangleCount, rngState);
     delete[] triIndices;
-#endif
+#endif // #if USE_BVH && !USE_EMBREE
 }
 
 void CleanupScene()
 {
     delete[] s_Triangles;
+#if USE_BVH && !USE_EMBREE
     s_BVH.clear();
+#endif
+#if USE_EMBREE
+    rtcReleaseScene(s_Scene);
+    rtcReleaseDevice(s_Device);
+#endif
 }
 
+#if USE_BVH && !USE_EMBREE
 static int HitBVH(int index, bool leaf, const Ray& r, const Ray& invR, float tMin, float tMax, Hit& outHit)
 {
     // if leaf node, check against a triangle
@@ -297,12 +348,37 @@ static bool HitShadowBVH(int index, bool leaf, const Ray& r, const Ray& invR, fl
         return true;
     return false;
 }
+#endif // #if USE_BVH && !USE_EMBREE
 
 
 // Check all the triangles in the scene for a hit, and return the closest one.
 int HitScene(const Ray& r, float tMin, float tMax, Hit& outHit)
 {
-#if USE_BVH
+#if USE_EMBREE
+    RTCIntersectContext ctx;
+    rtcInitIntersectContext(&ctx);
+    
+    RTCRayHit rh;
+    r.orig.store(&rh.ray.org_x);
+    rh.ray.tnear = tMin;
+    r.dir.store(&rh.ray.dir_x);
+    rh.ray.time = 0;
+    rh.ray.tfar = tMax;
+    rh.ray.mask = 0;
+    rh.ray.id = 0;
+    rh.ray.flags = 0;
+    rh.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+    rh.hit.primID = RTC_INVALID_GEOMETRY_ID;
+    
+    rtcIntersect1(s_Scene, &ctx, &rh);
+    if (rh.hit.geomID == RTC_INVALID_GEOMETRY_ID)
+        return -1;
+    outHit.t = rh.ray.tfar;
+    outHit.pos = r.pointAt(outHit.t);
+    outHit.normal = normalize(float3(rh.hit.Ng_x, rh.hit.Ng_y, rh.hit.Ng_z));
+    return rh.hit.primID;
+    
+#elif USE_BVH
     
     if (s_BVH.empty())
         return -1;
@@ -335,12 +411,38 @@ int HitScene(const Ray& r, float tMin, float tMax, Hit& outHit)
 
 bool HitSceneShadow(const Ray& r, float tMin, float tMax)
 {
-#if USE_BVH
+#if USE_EMBREE
+    RTCIntersectContext ctx;
+    rtcInitIntersectContext(&ctx);
+    
+    RTCRay rh;
+    r.orig.store(&rh.org_x);
+    rh.tnear = tMin;
+    r.dir.store(&rh.dir_x);
+    rh.time = 0;
+    rh.tfar = tMax;
+    rh.mask = 0;
+    rh.id = 0;
+    rh.flags = 0;
+    
+    rtcOccluded1(s_Scene, &ctx, &rh);
+    return rh.tfar < 0;
+    
+#elif USE_BVH
     if (s_BVH.empty())
         return false;
 
     Ray invR = r;
     invR.dir = float3(1.0f) / r.dir;
     return HitShadowBVH(0, false, r, invR, tMin, tMax);
+
+#else
+    for (int i = 0; i < s_TriangleCount; ++i)
+    {
+        if (HitTriangleShadow(r, s_Triangles[i], tMin, tMax))
+            return true;
+    }
+    return false;
+
 #endif
 }
