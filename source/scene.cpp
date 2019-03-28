@@ -156,16 +156,16 @@ static bool HitTriangleShadow(const Ray& r, const Triangle& tri, float tMin, flo
 struct BVHNode
 {
     AABB box;
-    int left;
-    int right;
-    bool leftLeaf;
-    bool rightLeaf;
+    int data1; // node: left index; leaf: start triangle index
+    int data2; // node: right index; leaf: triangle count
+    bool leaf;
 };
 #endif // #if USE_BVH
 
 // Scene information: a copy of the input triangles
 static int s_TriangleCount;
 static Triangle* s_Triangles;
+static int* s_TriIndices;
 #if USE_BVH
 static std::vector<BVHNode> s_BVH;
 #endif
@@ -192,12 +192,12 @@ static uint32_t XorShift32(uint32_t& state)
     return x;
 }
 
-static int CreateBVH(int* triIndices, int triCount, uint32_t& rngState)
+static int CreateBVH(int triStart, int triCount, uint32_t& rngState)
 {
     // sort input triangles by a randomly chosen axis
     int axis = XorShift32(rngState) % 3;
     if (axis == 0)
-        std::sort(triIndices, triIndices + triCount, [](int a, int b)
+        std::sort(s_TriIndices+triStart, s_TriIndices+triStart + triCount, [](int a, int b)
                   {
                       assert(a >= 0 && a < s_TriangleCount);
                       assert(b >= 0 && b < s_TriangleCount);
@@ -206,7 +206,7 @@ static int CreateBVH(int* triIndices, int triCount, uint32_t& rngState)
                       return boxa.bmin.getX() < boxb.bmin.getX();
                   });
     else if (axis == 1)
-        std::sort(triIndices, triIndices + triCount, [](int a, int b)
+        std::sort(s_TriIndices+triStart, s_TriIndices+triStart + triCount, [](int a, int b)
                   {
                       assert(a >= 0 && a < s_TriangleCount);
                       assert(b >= 0 && b < s_TriangleCount);
@@ -215,7 +215,7 @@ static int CreateBVH(int* triIndices, int triCount, uint32_t& rngState)
                       return boxa.bmin.getY() < boxb.bmin.getY();
                   });
     else if (axis == 2)
-        std::sort(triIndices, triIndices + triCount, [](int a, int b)
+        std::sort(s_TriIndices+triStart, s_TriIndices+triStart + triCount, [](int a, int b)
                   {
                       assert(a >= 0 && a < s_TriangleCount);
                       assert(b >= 0 && b < s_TriangleCount);
@@ -228,35 +228,29 @@ static int CreateBVH(int* triIndices, int triCount, uint32_t& rngState)
     BVHNode node;
     int nodeIndex = (int)s_BVH.size();
     s_BVH.push_back(node);
-    AABB boxLeft, boxRight;
-    if (triCount == 1)
+
+    // if we have less than N triangles, make this node a leaf that just has all of them
+    if (triCount <= 4)
     {
-        node.left = node.right = triIndices[0];
-        node.leftLeaf = node.rightLeaf = true;
-        assert(triIndices[0] >= 0 && triIndices[0] < s_TriangleCount);
-        boxLeft = boxRight = AABBOfTriangle(s_Triangles[triIndices[0]]);
-    }
-    else if (triCount == 2)
-    {
-        node.left = triIndices[0];
-        node.right = triIndices[1];
-        node.leftLeaf = node.rightLeaf = true;
-        assert(triIndices[0] >= 0 && triIndices[0] < s_TriangleCount);
-        assert(triIndices[1] >= 0 && triIndices[1] < s_TriangleCount);
-        boxLeft = AABBOfTriangle(s_Triangles[triIndices[0]]);
-        boxRight = AABBOfTriangle(s_Triangles[triIndices[1]]);
+        node.data1 = triStart;
+        node.data2 = triCount;
+        node.leaf = true;
+        node.box = AABBOfTriangle(s_Triangles[s_TriIndices[triStart]]);
+        for (int i = 1; i < triCount; ++i)
+        {
+            auto tribox = AABBOfTriangle(s_Triangles[s_TriIndices[triStart+i]]);
+            node.box = AABBUnion(node.box, tribox);
+        }
     }
     else
     {
-        node.left = CreateBVH(triIndices, triCount / 2, rngState);
-        node.right = CreateBVH(triIndices + triCount / 2, triCount - triCount / 2, rngState);
-        node.leftLeaf = node.rightLeaf = false;
-        assert(node.left >= 0 && node.left < s_BVH.size());
-        assert(node.right >= 0 && node.right < s_BVH.size());
-        boxLeft = s_BVH[node.left].box;
-        boxRight = s_BVH[node.right].box;
+        node.data1 = CreateBVH(triStart, triCount / 2, rngState);
+        node.data2 = CreateBVH(triStart + triCount / 2, triCount - triCount / 2, rngState);
+        node.leaf = false;
+        assert(node.data1 >= 0 && node.data1 < s_BVH.size());
+        assert(node.data2 >= 0 && node.data2 < s_BVH.size());
+        node.box = AABBUnion(s_BVH[node.data1].box, s_BVH[node.data2].box);
     }
-    node.box = AABBUnion(boxLeft, boxRight);
     s_BVH[nodeIndex] = node;
     return nodeIndex;
 }
@@ -305,12 +299,11 @@ void InitializeScene(int triangleCount, const Triangle* triangles)
 #elif USE_BVH
     
     // build BVH
-    int* triIndices = new int[triangleCount];
+    s_TriIndices = new int[triangleCount];
     for (int i = 0; i < triangleCount; ++i)
-        triIndices[i] = i;
+        s_TriIndices[i] = i;
     uint32_t rngState = 1;
-    CreateBVH(triIndices, triangleCount, rngState);
-    delete[] triIndices;
+    CreateBVH(0, triangleCount, rngState);
 #endif
 }
 
@@ -325,57 +318,73 @@ void CleanupScene()
     delete[] s_Indices;
 #elif USE_BVH
     s_BVH.clear();
+    delete[] s_TriIndices;
 #endif
 }
 
 #if USE_BVH
-static int HitBVH(int index, bool leaf, const Ray& r, const Ray& invR, float tMin, float tMax, Hit& outHit)
+static int HitBVH(int index, const Ray& r, const Ray& invR, float tMin, float tMax, Hit& outHit)
 {
-    // if leaf node, check against a triangle
-    if (leaf)
-    {
-        assert(index >= 0 && index < s_TriangleCount);
-        if (HitTriangle(r, s_Triangles[index], tMin, tMax, outHit))
-            return index;
-        return -1;
-    }
-    
-    // not a leaf node; check if ray hits us at all
+    // check if ray hits us at all
     const BVHNode& node = s_BVH[index];
     if (!HitAABB(invR, node.box, tMin, tMax))
         return -1;
+
+    // if leaf node, check against triangles
+    if (node.leaf)
+    {
+        int hitID = -1;
+        for (int i = 0; i < node.data2; ++i)
+        {
+            int triIndex = s_TriIndices[node.data1 + i];
+            assert(triIndex >= 0 && triIndex < s_TriangleCount);
+            if (HitTriangle(r, s_Triangles[triIndex], tMin, tMax, outHit))
+            {
+                hitID = triIndex;
+                tMax = outHit.t;
+            }
+        }
+        return hitID;
+    }
     
-    int leftId = HitBVH(node.left, node.leftLeaf, r, invR, tMin, tMax, outHit);
+    // not a leaf node, go into child nodes
+    int leftId = HitBVH(node.data1, r, invR, tMin, tMax, outHit);
     if (leftId != -1)
     {
         // left was hit: only check right hit up until left hit distance
-        int rightId = HitBVH(node.right, node.rightLeaf, r, invR, tMin, outHit.t, outHit);
+        int rightId = HitBVH(node.data2, r, invR, tMin, outHit.t, outHit);
         if (rightId != -1)
             return rightId;
         return leftId;
     }
     // left was not hit: check right
-    int rightId = HitBVH(node.right, node.rightLeaf, r, invR, tMin, tMax, outHit);
+    int rightId = HitBVH(node.data2, r, invR, tMin, tMax, outHit);
     return rightId;
 }
 
-static bool HitShadowBVH(int index, bool leaf, const Ray& r, const Ray& invR, float tMin, float tMax)
+static bool HitShadowBVH(int index, const Ray& r, const Ray& invR, float tMin, float tMax)
 {
-    // if leaf node, check against a triangle
-    if (leaf)
-    {
-        assert(index >= 0 && index < s_TriangleCount);
-        return HitTriangleShadow(r, s_Triangles[index], tMin, tMax);
-    }
-    
-    // not a leaf node; check if ray hits us at all
+    // check if ray hits us at all
     const BVHNode& node = s_BVH[index];
     if (!HitAABB(invR, node.box, tMin, tMax))
         return false;
     
-    if (HitShadowBVH(node.left, node.leftLeaf, r, invR, tMin, tMax))
+    // if leaf node, check against triangles
+    if (node.leaf)
+    {
+        for (int i = 0; i < node.data2; ++i)
+        {
+            int triIndex = s_TriIndices[node.data1 + i];
+            assert(triIndex >= 0 && triIndex < s_TriangleCount);
+            if (HitTriangleShadow(r, s_Triangles[triIndex], tMin, tMax))
+                return true;
+        }
+        return false;
+    }
+
+    if (HitShadowBVH(node.data1, r, invR, tMin, tMax))
         return true;
-    if (HitShadowBVH(node.right, node.rightLeaf, r, invR, tMin, tMax))
+    if (HitShadowBVH(node.data2, r, invR, tMin, tMax))
         return true;
     return false;
 }
@@ -439,7 +448,7 @@ int HitScene(const Ray& r, float tMin, float tMax, Hit& outHit)
     
     Ray invR = r;
     invR.dir = float3(1.0f) / r.dir;
-    return HitBVH(0, false, r, invR, tMin, tMax, outHit);
+    return HitBVH(0, r, invR, tMin, tMax, outHit);
     
 #else
 
@@ -499,7 +508,7 @@ bool HitSceneShadow(const Ray& r, float tMin, float tMax)
 
     Ray invR = r;
     invR.dir = float3(1.0f) / r.dir;
-    return HitShadowBVH(0, false, r, invR, tMin, tMax);
+    return HitShadowBVH(0, r, invR, tMin, tMax);
 
 #else
     for (int i = 0; i < s_TriangleCount; ++i)
