@@ -1,3 +1,30 @@
+# Toy Mesh Path Tracer for a job interview task
+
+I used the task below for some job interviews I did in 2019 Q2. The initial version was a super simple brute-force
+triangle mesh path tracer (no acceleration structures, no threading, etc.), and the task was to make it faster.
+Of course I wanted to know how much faster it *can* get, so I did some simple speedups myself in parallel.
+
+The original non-optimized-at-all version is at
+[`01-initial-job-task`](https://github.com/aras-p/ToyMeshPathTracer/tree/01-initial-job-task) tag.
+I made other tags for later snapshots; here they are with performance numbers *(measured on 2018 MacBookPro i9)*,
+on the `teapot.obj` (15706 triangles) and `sponza.obj` (66452 triangles) scenes respectively:
+
+* `01-initial-job-task`, initial: 3.5 and LOLNOPE Krays/s
+* `02-multi-threaded`, multi-threading: 18.9 and LOLNOPE Krays/s
+* `03-bvh`, simple bounding volume hierarchy: 6978.2 and 1350.3 Krays/s
+* `04-simd`, simplistic naïve SIMD: 8919.0 and 1853.1 Krays/s
+* `05-change-ray-tri-algo`, better ray-triangle intersection test: 10251.1 and 1952.5 Krays/s
+* `06-shadow-rays`, faster code path for shadow rays: 10888.0 and 2568.3 Krays/s
+* `07-compare-with-embree`, compare with [Intel Embree](https://embree.github.io/) 3.5.2: 75965.0 and 40800.8 Krays/s *(yup, Embree is fast!)*
+* `08-compare-with-nanort`, compare with [NanoRT](https://github.com/lighttransport/nanort): 20638.2 and 4197.9 Krays/s
+
+And yeah, I know -- most obvious next steps would be to use better BVH building heuristics (like SAH), and
+doing SIMD properly instead of "let's make our vector/ray/color class use SIMD". I did not get to that (yet?),
+but in any case -- the code is already over 3000 *times* faster than the initial version. With the BVH being the major
+win, as one would expect.
+
+*Original desceription of the interview task is below:*
+
 # Interview task/assignment: speed up a simple path tracer
 
 This project contains a simple triangle mesh path tracer implemented in C++.
